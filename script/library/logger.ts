@@ -1,9 +1,7 @@
 /**
  * Author      :: Velix <github.com/vlxyzo>
- * License     :: MIT
- * Version     :: 1.0.0
+ * License     :: GPL-V3.0
  * Repository  :: github.com/vlxyzo/zerotwo
- * Support Me  :: saweria.co/vlxyzo [ID/PH]
  * Modified    :: 2026-09-14
  */
 
