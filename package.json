@@ -1,0 +1,12 @@
+{
+  "name": "zerotwo",
+  "version": "0.0.1-alpha",
+  "description": "Telegram Bot",
+  "license": "MIT",
+  "author": "Velix",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
