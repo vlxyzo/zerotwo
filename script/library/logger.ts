@@ -2,11 +2,13 @@
  * Author      :: Velix <github.com/vlxyzo>
  * License     :: GPL-V3.0
  * Repository  :: github.com/vlxyzo/zerotwo
- * Modified    :: 2026-09-14
+ * Modified    :: 2026-09-15
+ *
+ * plz don't remove the watermark :)
  */
 
 import { styleText } from 'node:util';
-import { getTime } from './times.js';
+import { TimeUtil } from './times.ts';
 
 const tm = () => styleText(['gray', 'bold'], `${getTime('HH:mm:ss')}`);
 
