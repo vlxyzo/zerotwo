@@ -44,6 +44,7 @@
 		"#src/*": "./source/*"
 	},
 	"dependencies": {
+		"cheerio": "^1.2.0",
 		"telegraf": "^4.16.3"
 	},
 	"devDependencies": {
