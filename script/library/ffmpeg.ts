@@ -52,7 +52,6 @@ export class FFmpegWrapper {
 
 			child.stdout.on('data', (chunk: Buffer) => stdoutChunks.push(chunk));
 			child.stderr.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
-
 			child.on('error', (err: Error) => {
 				if (isSettled) return;
 				isSettled = true;
