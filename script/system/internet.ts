@@ -1,11 +1,14 @@
 /**
- * Author      :: Velix <github.com/vlxyzo>
- * License     :: GPL-V3.0
- * Repository  :: github.com/vlxyzo/zerotwo
- * Modified    :: 2026-09-14
+ * 版权所有。允许个人和商业使用及修改。
+ * 重新分发请严格遵循 GPL-V3.0 协议，且请勿声称原创。
+ *
+ * 项目  :  Zero Two v0.0.1-alpha
+ * 作者  :  Velix
+ * 协议  :  GPL-V3.0
+ * 源码  :  github.com/vlxyzo/zerotwo
  */
 
-import { log } from './logger.ts';
+import { log } from '#lib/logger.ts';
 
 const RETRY_STATUSES = new Set([403, 429, 503]);
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -50,7 +53,6 @@ function buildHeaders(mode: FetchMode, isMobile: boolean, customHeaders?: Header
 	if (!headers.has('User-Agent') && !headers.has('user-agent')) {
 		headers.set('User-Agent', getRandomUA(isMobile));
 	}
-
 	if (mode === 'api') {
 		if (!headers.has('Accept')) headers.set('Accept', 'application/json, text/plain, */*');
 	} else {
@@ -64,7 +66,6 @@ function buildHeaders(mode: FetchMode, isMobile: boolean, customHeaders?: Header
 		if (!headers.has('Sec-Fetch-Mode')) headers.set('Sec-Fetch-Mode', 'navigate');
 		if (!headers.has('Sec-Fetch-Site')) headers.set('Sec-Fetch-Site', 'cross-site');
 	}
-
 	return headers;
 }
 
@@ -79,7 +80,6 @@ export async function smartFetch(
 		mode = 'scraper',
 		...fetchOptions
 	} = options;
-
 	const validTimeoutMs = Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_TIMEOUT_MS;
 	const isFormData = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
 	const isUrlSearchParams =
@@ -90,11 +90,9 @@ export async function smartFetch(
 			finalHeaders.delete('sec-fetch-mode');
 			finalHeaders.delete('sec-fetch-dest');
 		}
-
 		if (isUrlSearchParams && !finalHeaders.has('content-type')) {
 			finalHeaders.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
 		}
-
 		const timeoutSignal = AbortSignal.timeout(validTimeoutMs);
 		const combinedSignal = callerSignal
 			? AbortSignal.any([timeoutSignal, callerSignal])
@@ -105,7 +103,6 @@ export async function smartFetch(
 			signal: combinedSignal,
 		});
 	};
-
 	try {
 		let response = await executeRequest(false);
 		if (RETRY_STATUSES.has(response.status)) {
@@ -116,16 +113,13 @@ export async function smartFetch(
 			if (response.body) {
 				await response.body.cancel().catch(() => {});
 			}
-
 			response = await executeRequest(true);
 		}
-
 		if (!response.ok) {
 			throw new Error(
 				`HTTP Status ${response.status} - ${response.statusText || 'Request failed'}`
 			);
 		}
-
 		return response;
 	} catch (error: unknown) {
 		const errObj = error as Error;
@@ -139,5 +133,3 @@ export async function smartFetch(
 	}
 }
 // this have 2 mode ('scraper' or 'api') so u just add mode: 'string' - delia
-// damn girl ur so genius like.. omg XD - velix
-// ikr😚 - delia

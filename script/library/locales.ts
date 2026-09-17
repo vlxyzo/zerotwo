@@ -1,10 +1,11 @@
 /**
- * Author      :: Velix <github.com/vlxyzo>
- * License     :: GPL-V3.0
- * Repository  :: github.com/vlxyzo/zerotwo
- * Modified    :: 2026-09-15
+ * 版权所有。允许个人和商业使用及修改。
+ * 重新分发请严格遵循 GPL-V3.0 协议，且请勿声称原创。
  *
- * plz don't remove the watermark :)
+ * 项目  :  Zero Two v0.0.1-alpha
+ * 作者  :  Velix
+ * 协议  :  GPL-V3.0
+ * 源码  :  github.com/vlxyzo/zerotwo
  */
 
 import fs from 'node:fs';
@@ -24,7 +25,9 @@ export class I18n {
 	private static readonly pathLocales = path.join(import.meta.dirname, '../../source/locales');
 	private static readonly fallbackLang = 'en';
 	private static localesData: Record<string, NestedDictionary> = {};
-	private static reloadTimer?: NodeJS.Timeout;
+	private static watcher: fs.FSWatcher | null = null;
+	private static readonly reloadTimers = new Map<string, NodeJS.Timeout>();
+
 	public static load(): void {
 		if (!fs.existsSync(this.pathLocales)) {
 			log.error(`Cannot find locales directory at ${this.pathLocales}`);
@@ -42,12 +45,10 @@ export class I18n {
 				const fileContent = fs.readFileSync(filePath, 'utf-8');
 				const parsedData = JSON.parse(fileContent) as LocaleFile;
 				const langKey = parsedData?.meta?.lang;
-
 				if (!langKey) {
 					log.warning(`Locales ${file} is missing meta.lang. Skipped`);
 					continue;
 				}
-
 				this.localesData[langKey] = parsedData as unknown as NestedDictionary;
 				loadedCount++;
 			} catch (error: unknown) {
@@ -57,38 +58,53 @@ export class I18n {
 		}
 
 		if (!this.localesData[this.fallbackLang]) {
-			log.warning(
-				`Fallback language (${this.fallbackLang}) not found. The sistem may be unstable`
+			log.error(
+				`Fallback language ${this.fallbackLang} not found. The system may be unstable`
 			);
 		} else {
 			log.success(`Successfully loaded ${loadedCount} languages`);
 		}
-
 		this.watchFiles();
 	}
 
 	private static watchFiles(): void {
-		if (!fs.existsSync(this.pathLocales)) return;
-		fs.watch(this.pathLocales, (eventType, filename) => {
+		if (!fs.existsSync(this.pathLocales) || this.watcher) return;
+		this.watcher = fs.watch(this.pathLocales, (eventType, filename) => {
 			if (!filename || !filename.endsWith('.json')) return;
-			if (this.reloadTimer) clearTimeout(this.reloadTimer);
-			this.reloadTimer = setTimeout(async () => {
-				log.info(`Locales file ${filename} changed. Reloading...`);
-				try {
-					const filePath = path.join(this.pathLocales, filename);
-					const fileContent = await fsPromises.readFile(filePath, 'utf-8');
-					const parsedData = JSON.parse(fileContent) as LocaleFile;
-					const langKey = parsedData?.meta?.lang;
-					if (langKey) {
-						this.localesData[langKey] = parsedData as unknown as NestedDictionary;
-						log.success(`Successfully hot reloading language ${langKey}`);
-					}
-				} catch (error: unknown) {
-					const msg = error instanceof Error ? error.message : String(error);
-					log.error(`Failed to hot reload locales file ${filename}: ${msg}`);
-				}
-			}, 300);
+
+			const existingTimer = this.reloadTimers.get(filename);
+			if (existingTimer) clearTimeout(existingTimer);
+			this.reloadTimers.set(
+				filename,
+				setTimeout(() => {
+					this.reloadTimers.delete(filename);
+					void this.reloadFile(filename);
+				}, 300)
+			);
 		});
+
+		// fs.watch can emit 'error'
+		this.watcher.on('error', (error: Error) => {
+			log.error(`Locales file watcher crashed: ${error.message}`);
+			this.watcher = null;
+		});
+	}
+
+	private static async reloadFile(filename: string): Promise<void> {
+		log.info(`Locales file ${filename} changed. Reloading...`);
+		try {
+			const filePath = path.join(this.pathLocales, filename);
+			const fileContent = await fsPromises.readFile(filePath, 'utf-8');
+			const parsedData = JSON.parse(fileContent) as LocaleFile;
+			const langKey = parsedData?.meta?.lang;
+			if (langKey) {
+				this.localesData[langKey] = parsedData as unknown as NestedDictionary;
+				log.success(`Successfully hot reloading language ${langKey}`);
+			}
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : String(error);
+			log.error(`Failed to hot reload locales file ${filename}: ${msg}`);
+		}
 	}
 
 	private static getLangData(langCode: string): NestedDictionary {
@@ -111,12 +127,10 @@ export class I18n {
 		if (currentData === undefined && langCode !== this.fallbackLang) {
 			return this.t(this.fallbackLang, keyPath, variables);
 		}
-
 		if (currentData === undefined) {
 			log.error(`Missing translation ${keyPath} for language ${langCode}`);
 			return keyPath;
 		}
-
 		let text = '';
 		if (Array.isArray(currentData)) {
 			text = currentData.join(', ');
@@ -126,13 +140,11 @@ export class I18n {
 			log.error(`Translation ${keyPath} is not a string or array`);
 			return keyPath;
 		}
-
 		if (variables && Object.keys(variables).length > 0) {
 			text = text.replace(/\{(\w+)\}/g, (match, key) => {
 				return variables[key] !== undefined ? String(variables[key]) : match;
 			});
 		}
-
 		return text;
 	}
 }

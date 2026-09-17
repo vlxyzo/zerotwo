@@ -33,17 +33,18 @@
 		"update": "git pull && npm install"
 	},
 	"engines": {
-		"node": ">=22.0.0",
+		"node": ">=24.0.0",
 		"npm": ">=11.0.0"
 	},
 	"imports": {
-		"#database/*": "./database/*",
+		"#db/*": "./database/*",
 		"#sys/*": "./script/system/*",
 		"#lib/*": "./script/library/*",
 		"#plug/*": "./script/plugin/*",
 		"#src/*": "./source/*"
 	},
 	"dependencies": {
+		"@supabase/supabase-js": "^2.116.0",
 		"cheerio": "^1.2.0",
 		"telegraf": "^4.16.3"
 	},
@@ -51,5 +52,8 @@
 		"@types/node": "^26.5.1",
 		"tsx": "^4.23.13",
 		"typescript": "^7.0.2"
+	},
+	"allowScripts": {
+		"esbuild@0.28.2": true
 	}
 }

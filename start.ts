@@ -1,49 +1,52 @@
 /**
- * Author      :: Velix <github.com/vlxyzo>
- * License     :: GPL-V3.0
- * Repository  :: github.com/vlxyzo/zerotwo
- * Modified    :: 2026-09-15
+ * 版权所有。允许个人和商业使用及修改。
+ * 重新分发请严格遵循 GPL-V3.0 协议，且请勿声称原创。
  *
- * plz don't remove the watermark :)
+ * 项目  :  Zero Two v0.0.1-alpha
+ * 作者  :  Velix
+ * 协议  :  GPL-V3.0
+ * 源码  :  github.com/vlxyzo/zerotwo
  */
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { log } from '#lib/logger.ts';
 
-type IpcMessage = 'reset' | 'uptime' | 'exit';
-type ProcessSignal = 'SIGINT' | 'SIGTERM';
+export type CtPmsg = 'reset' | 'uptime' | 'exit';
+export type PtCmsg = 'gc';
+type SignalProcess = 'SIGINT' | 'SIGTERM';
 
-class BotProcessManager {
+const codezero = join(import.meta.dirname, './script/main.ts');
+
+class ProcessManager {
 	private readonly maxCrashes = 5;
-	private readonly crashWindowMs = 60_000;
-	private readonly gcIntervalMs = 15 * 60 * 1000;
+	private readonly crashMs = 60_000;
+	private readonly garbageMs = 15 * 60 * 1000;
 	private child: ChildProcess | null = null;
 	private crashCount = 0;
 	private lastCrash = Date.now();
 	private gcTimer?: NodeJS.Timeout;
-	private isRunning = true;
-	private isRestarting = false;
+	private fcKillTime?: NodeJS.Timeout;
+	private isShutdown = false;
+	private isRestart = false;
 
 	constructor(private readonly entryPath: string) {
-		this.registerSystemSignals();
+		this.sysSignal();
 	}
 
 	public start(): void {
-		this.isRestarting = false;
+		this.isRestart = false;
 
 		const args = ['--expose-gc', this.entryPath, ...process.argv.slice(2)];
-
 		this.child = spawn(process.argv[0], args, {
 			stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
 		});
-
-		this.setupChildListeners();
-		this.startGcInterval();
+		this.childListen();
+		this.startGc();
 	}
 
-	private cleanRestart(): void {
-		this.isRestarting = true;
+	private ellRestart(): void {
+		this.isRestart = true;
 		if (this.child) {
 			log.loading('Stopping current process for restart...');
 			this.child.kill();
@@ -52,84 +55,84 @@ class BotProcessManager {
 		}
 	}
 
-	private cleanExit(code = 0): never {
-		this.stopGcInterval();
+	private ellExit(code = 0): never {
+		this.stopGc();
+		if (this.fcKillTime) {
+			clearTimeout(this.fcKillTime);
+		}
 		process.exit(code);
 	}
 
-	// handle ipc mess
-	private handleIpcMessage(message: IpcMessage): void {
+	private ipcMessage(message: CtPmsg): void {
 		switch (message) {
 			case 'reset':
-				log.loading('Restart request received...');
-				this.cleanRestart();
+				log.loading('Restart request received. Restarting...');
+				this.ellRestart();
 				break;
 			case 'uptime':
-				this.child?.send(process.uptime());
+				if (this.child?.connected) {
+					this.child.send(process.uptime());
+				}
 				break;
 			case 'exit':
-				this.cleanExit(0);
+				this.ellExit(0);
 				break;
 		}
 	}
 
-	// graceful
-	private async gracefulShutdown(signal: ProcessSignal): Promise<void> {
-		this.isRunning = false;
+	private async graceShutd(signal: SignalProcess): Promise<void> {
+		if (this.isShutdown) return;
+		this.isShutdown = true;
 		log.warning(`${signal} received. Shutting down gracefully...`);
-
-		this.stopGcInterval();
+		this.stopGc();
 
 		if (!this.child) {
 			process.exit(0);
 		}
-
 		this.child.kill(signal);
-
-		const forceKillTimer = setTimeout(() => {
-			log.error('Child process unresponsive. Forcing shutdown...');
+		this.fcKillTime = setTimeout(() => {
+			log.error('Child process is unresponsive. Forcing shutdown...');
 			process.exit(1);
 		}, 8000);
-
 		this.child.once('exit', () => {
-			clearTimeout(forceKillTimer);
-			process.exit(0);
+			this.ellExit(0);
 		});
 	}
 
-	// event
-	private setupChildListeners(): void {
+	private childListen(): void {
 		if (!this.child) return;
-
-		this.child.on('message', (data: IpcMessage) => this.handleIpcMessage(data));
+		this.child.on('message', (data: CtPmsg) => this.ipcMessage(data));
 		this.child.on('exit', (code, signal) => {
 			this.child = null;
 
-			if (!this.isRunning) {
-				log.success('Process stopped manually. Have a nice day :D');
-				this.cleanExit(0);
+			if (this.isShutdown) {
+				log.success(
+					'Process stopped manually. Thanks for using this project, have a nice day! — Velix'
+				);
+				this.ellExit(0);
 			}
 
-			if (this.isRestarting) {
+			if (this.isRestart) {
 				log.loading('Child process terminated. Starting fresh instance...');
-				return this.start();
+				this.start();
+				return;
 			}
 
 			if (code !== 0) {
-				this.handleCrash(code, signal);
+				this.crashHandle(code, signal);
 			} else {
-				log.success('Process exited cleanly. Have a nice day :D');
-				this.cleanExit(0);
+				log.success(
+					'Process exited cleanly. Thanks for using this project, have a nice day! — Velix'
+				);
+				this.ellExit(0);
 			}
 		});
 	}
 
-	// handle crash, auto restart
-	private handleCrash(code: number | null, signal: string | null): void {
+	private crashHandle(code: number | null, signal: string | null): void {
 		log.error(`Process crashed with exit code ${code || signal}`);
-
 		const now = Date.now();
-		if (now - this.lastCrash > this.crashWindowMs) {
+		if (now - this.lastCrash > this.crashMs) {
 			this.crashCount = 0;
 		}
 
@@ -137,39 +140,44 @@ class BotProcessManager {
 		this.lastCrash = now;
 
 		if (this.crashCount >= this.maxCrashes) {
-			log.error(`Process crashed ${this.crashCount} times within 1m. Stopping auto restart`);
-			this.cleanExit(1);
+			log.error(
+				`Process crashed ${this.crashCount} times within 1m. Stopping auto restart...`
+			);
+			this.ellExit(1);
 		}
-
 		log.loading('Auto restarting in 3s...');
 		setTimeout(() => this.start(), 3000);
 	}
 
-	// timer gc
-	private startGcInterval(): void {
-		this.stopGcInterval();
+	private startGc(): void {
+		this.stopGc();
 		this.gcTimer = setInterval(() => {
 			if (this.child?.connected) {
-				this.child.send('gc');
+				const gcMsg: PtCmsg = 'gc';
+				this.child.send(gcMsg);
 			}
-		}, this.gcIntervalMs);
+		}, this.garbageMs);
 	}
 
-	private stopGcInterval(): void {
+	private stopGc(): void {
 		if (this.gcTimer) {
 			clearInterval(this.gcTimer);
 			this.gcTimer = undefined;
 		}
 	}
 
-	// bind event listener
-	private registerSystemSignals(): void {
-		process.on('SIGINT', () => this.gracefulShutdown('SIGINT'));
-		process.on('SIGTERM', () => this.gracefulShutdown('SIGTERM'));
+	private sysSignal(): void {
+		const handlesignal = (signal: SignalProcess) => {
+			this.graceShutd(signal).catch(err => {
+				log.error(`Error during graceful shutdown: ${String(err)}`);
+				process.exit(1);
+			});
+		};
+		process.once('SIGINT', () => handlesignal('SIGINT'));
+		process.once('SIGTERM', () => handlesignal('SIGTERM'));
 	}
 }
 
-// TODO: main.ts
-const botScriptPath = join(import.meta.dirname, './script/main.ts');
-const manager = new BotProcessManager(botScriptPath);
+// TODO
+const manager = new ProcessManager(codezero);
 manager.start();
