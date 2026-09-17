@@ -47,7 +47,7 @@
 		"@supabase/supabase-js": "^2.116.0",
 		"cheerio": "^1.2.0",
 		"telegraf": "^4.16.3",
-		"zod": "^3.30.0"
+		"zod": "^4.6.5"
 	},
 	"devDependencies": {
 		"@types/node": "^26.5.1",

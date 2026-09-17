@@ -135,7 +135,6 @@ class ProcessManager {
 		if (now - this.lastCrash > this.crashMs) {
 			this.crashCount = 0;
 		}
-
 		this.crashCount++;
 		this.lastCrash = now;
 
