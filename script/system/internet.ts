@@ -37,7 +37,7 @@ const MOBILE_UA: readonly string[] = [
 export function getRandomUA(isMobile = false): string {
 	const list = isMobile ? MOBILE_UA : DESKTOP_UA;
 	if (list.length === 0) {
-		log.error('No user agent strings are configured');
+		log.error('No user agent strings are configured. The system may be unstable!');
 		return 'Mozilla/5.0 (compatible; Bot/1.0)';
 	}
 	return list[Math.floor(Math.random() * list.length)];

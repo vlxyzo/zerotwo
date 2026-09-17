@@ -16,7 +16,7 @@ export type CtPmsg = 'reset' | 'uptime' | 'exit';
 export type PtCmsg = 'gc';
 type SignalProcess = 'SIGINT' | 'SIGTERM';
 
-const codezero = join(import.meta.dirname, './script/main.ts');
+const velix = join(import.meta.dirname, './script/main.ts');
 
 class ProcessManager {
 	private readonly maxCrashes = 5;
@@ -177,6 +177,5 @@ class ProcessManager {
 	}
 }
 
-// TODO
-const manager = new ProcessManager(codezero);
+const manager = new ProcessManager(velix);
 manager.start();

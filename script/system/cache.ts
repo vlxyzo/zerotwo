@@ -10,14 +10,14 @@
 
 import { log } from '#lib/logger.ts';
 
-export type EvictionReason = 'MAX_SIZE_REACHED' | 'TTL_EXPIRED' | 'SWEEP_CLEANUP' | 'MANUAL';
+export type EvictReason = 'MAX_SIZE_REACHED' | 'TTL_EXPIRED' | 'SWEEP_CLEANUP' | 'MANUAL';
 
-export interface CacheOptions<K, V> {
+export interface CacheOpt<K, V> {
 	maxSize?: number;
 	ttl?: number;
 	sweepInterval?: number;
 	name?: string;
-	onEvict?: (key: K, value: V, reason: EvictionReason) => void;
+	onEvict?: (key: K, value: V, reason: EvictReason) => void;
 }
 
 export interface CacheStats {
@@ -26,16 +26,16 @@ export interface CacheStats {
 	ttl: number | 'No expiration';
 }
 
-export class AdvancedMap<K, V> extends Map<K, V> {
+export class AdvMap<K, V> extends Map<K, V> {
 	public readonly maxSize: number;
 	public readonly ttl: number;
 	public readonly name: string;
 	public readonly sweepInterval: number;
-	public readonly onEvict: ((key: K, value: V, reason: EvictionReason) => void) | null;
+	public readonly onEvict: ((key: K, value: V, reason: EvictReason) => void) | null;
 	private readonly timestamps = new Map<K, number>();
 	private _sweepTimer: NodeJS.Timeout | null = null;
 
-	constructor(options: CacheOptions<K, V> = {}) {
+	constructor(options: CacheOpt<K, V> = {}) {
 		super();
 		this.maxSize = options.maxSize ?? 0;
 		this.ttl = options.ttl ?? 0;
@@ -94,7 +94,7 @@ export class AdvancedMap<K, V> extends Map<K, V> {
 		this.clear();
 	}
 
-	private _evict(key: K, reason: EvictionReason = 'MANUAL'): void {
+	private _evict(key: K, reason: EvictReason = 'MANUAL'): void {
 		const value = super.get(key);
 		this.delete(key);
 
@@ -103,7 +103,7 @@ export class AdvancedMap<K, V> extends Map<K, V> {
 				this.onEvict(key, value, reason);
 			} catch (e) {
 				const errorMsg = e instanceof Error ? e.message : String(e);
-				log.error(`Cache ${this.name} error during eviction callback: ${errorMsg}`);
+				log.error(`Cache ${this.name} got error during eviction callback: ${errorMsg}`);
 			}
 		}
 	}
@@ -112,7 +112,6 @@ export class AdvancedMap<K, V> extends Map<K, V> {
 		this._sweepTimer = setInterval(() => {
 			const now = Date.now();
 			let sweepCount = 0;
-
 			for (const [key, timeAdded] of this.timestamps.entries()) {
 				if (now - timeAdded > this.ttl) {
 					this._evict(key, 'SWEEP_CLEANUP');
@@ -121,29 +120,28 @@ export class AdvancedMap<K, V> extends Map<K, V> {
 			}
 
 			if (sweepCount > 0) {
-				log.info(`${this.name} swept ${sweepCount} expired items`);
+				log.debug(`Cache ${this.name} has swept ${sweepCount} expired items`);
 			}
 		}, this.sweepInterval).unref();
 	}
 }
 
-class CacheManager {
+class ManageCache {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private readonly caches = new Map<string, AdvancedMap<any, any>>();
+	private readonly caches = new Map<string, AdvMap<any, any>>();
 
-	public createCache<K, V>(name: string, options: CacheOptions<K, V> = {}): AdvancedMap<K, V> {
+	public createCache<K, V>(name: string, options: CacheOpt<K, V> = {}): AdvMap<K, V> {
 		if (this.caches.has(name)) {
-			return this.caches.get(name) as AdvancedMap<K, V>;
+			return this.caches.get(name) as AdvMap<K, V>;
 		}
-
 		options.name = name;
-		const cache = new AdvancedMap<K, V>(options);
+		const cache = new AdvMap<K, V>(options);
 		this.caches.set(name, cache);
 		return cache;
 	}
 
-	public getCache<K, V>(name: string): AdvancedMap<K, V> | undefined {
-		return this.caches.get(name) as AdvancedMap<K, V> | undefined;
+	public getCache<K, V>(name: string): AdvMap<K, V> | undefined {
+		return this.caches.get(name) as AdvMap<K, V> | undefined;
 	}
 
 	public clearAllCaches(): void {
@@ -152,15 +150,13 @@ class CacheManager {
 			total += cache.size;
 			cache.clear();
 		}
-
-		log.success(`Cleared ${total} total items across all caches`);
+		log.success(`Cleared total ${total} items across all caches`);
 	}
 
 	public destroyAll(): void {
 		for (const cache of this.caches.values()) {
 			cache.destroy();
 		}
-
 		this.caches.clear();
 	}
 
@@ -173,9 +169,8 @@ class CacheManager {
 				ttl: cache.ttl || 'No expiration',
 			};
 		}
-
 		return stats;
 	}
 }
 
-export const GlobalCache = new CacheManager();
+export const GlobCache = new ManageCache();

@@ -1,6 +1,9 @@
 # dependency
 node_modules/
 
+# build
+dist/
+
 # credentials
 .env
 .env.deployment
@@ -48,4 +51,3 @@ Pods/
 database/temp/*
 NOTE.txt
 graph.svg
-
