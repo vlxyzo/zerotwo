@@ -8,6 +8,15 @@
  * 源码  :  github.com/vlxyzo/zerotwo
  */
 
+// [DISABLED] Reason:
+// I18n module is temporarily disabled to reduce complexity during alpha testing.
+// Full multi-language support will be introduced in the v1.0.0 stable release.
+
+// NOTE: The structure/flow of this module is subject to change at any time
+// to follow the project's workflow. It is not recommended to use this module
+// until everything is finalized.
+
+/*
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
@@ -150,3 +159,4 @@ export class I18n {
 }
 
 I18n.load();
+*/
