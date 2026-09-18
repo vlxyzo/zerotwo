@@ -67,8 +67,7 @@ export class TimeUtil {
 		const h = Math.floor(ms / (60 * 60 * 1000)) % 24;
 		const m = Math.floor(ms / (60 * 1000)) % 60;
 		const s = Math.floor(ms / 1000) % 60;
-		const formatUnit = (val: number, unit: string) =>
-			val > 0 ? `${val} ${unit}${val > 1 ? 's' : ''}` : '';
+		const formatUnit = (val: number, unit: string) => val > 0 ? `${val} ${unit}${val > 1 ? 's' : ''}` : '';
 		return (
 			[
 				formatUnit(d, 'day'),

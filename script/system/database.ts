@@ -14,4 +14,4 @@ export {
 	DatabaseSyncError,
 	DbManager,
 } from './module/manager.ts';
-export type { DatabaseManagerOptions, UserPayload, UserRecord } from './module/manage.ts';
+export type { DatabaseManagerOptions, UserPayload, UserRecord } from './module/manager.ts';

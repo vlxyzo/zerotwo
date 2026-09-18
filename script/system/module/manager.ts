@@ -331,8 +331,8 @@ export class DatabaseManager {
 	}
 
 	private static createConfiguredClient(): SupabaseClient<DatabaseSchema> | null {
-		const url = process.env.SUPABASE_URL;
-		const key = process.env.SUPABASE_ANON_KEY;
+		const url = database.urldb;
+		const key = database.keydb;
 		return url && key ? createClient<DatabaseSchema>(url, key) : null;
 	}
 }

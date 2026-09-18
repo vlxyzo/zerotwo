@@ -11,7 +11,7 @@
 import { styleText } from 'node:util';
 import { TimeUtil } from './times.ts';
 
-const tm = () => styleText(['bgGray', 'white', 'bold'], `${TimeUtil.formatTime('HH:mm:ss')}`);
+const tm = () => styleText(['gray'], `${TimeUtil.formatTime('HH:mm:ss')}`);
 
 export const log = {
 	error: text => console.error(`${tm()} ${styleText(['white', 'bgRed', 'bold'], `⟨X⟩ ${text}`)}`),

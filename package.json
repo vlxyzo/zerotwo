@@ -15,18 +15,19 @@
 	},
 	"funding": [
 		{
-			"type": "002 Bot",
-			"url": "https://t.me/codezero2_bot"
-		},
-		{
 			"type": "Telegram Channel",
 			"url": "https://t.me/vlxzo"
+		},
+		{
+			"type": "002 Bot",
+			"url": "https://t.me/codezero2_bot"
 		}
 	],
 	"private": true,
 	"type": "module",
 	"main": "start.ts",
 	"scripts": {
+		"build": "",
 		"start": "tsx --env-file=.env start.ts",
 		"dev": "tsx watch --env-file=.env start.ts",
 		"clean": "node -e \"const fs = require('fs'); fs.rmSync('database', { recursive: true, force: true }); fs.mkdirSync('database');\"",
@@ -46,8 +47,7 @@
 	"dependencies": {
 		"@supabase/supabase-js": "^2.116.0",
 		"cheerio": "^1.2.0",
-		"telegraf": "^4.16.3",
-		"zod": "^4.6.5"
+		"telegraf": "^4.16.3"
 	},
 	"devDependencies": {
 		"@types/node": "^26.5.1",

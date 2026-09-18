@@ -7,3 +7,11 @@
  * 协议  :  GPL-V3.0
  * 源码  :  github.com/vlxyzo/zerotwo
  */
+
+import { Telegraf } from 'telegraf';
+import { log } from '#lib/logger.ts';
+import './config.ts';
+
+log.success('reached main.ts');
+log.debug('123456789');
+log.error(bot.name);
