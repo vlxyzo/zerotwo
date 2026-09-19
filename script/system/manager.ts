@@ -11,8 +11,8 @@
 import { promises as fs } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { GlobCache, type AdvMap } from '../cache.ts';
 import { log } from '#lib/logger.ts';
+import { GlobCache, type AdvMap } from './cache.ts';
 import { toDbId, type Json, type UserInsert, type UserRow } from './types.ts';
 
 type UserRecord = UserRow<Json>;
@@ -131,12 +131,14 @@ export class DatabaseManager {
 				.maybeSingle();
 			if (error) throw error;
 			if (data && !isUserRow(data)) {
-				throw new DatabaseSyncError('Supabase returned an invalid users row');
+				throw new DatabaseSyncError('Data from supabase returned an invalid users row');
 			}
 			if (data) this.cache.set(key, data);
 			return data ?? undefined;
 		} catch (error) {
-			log.error(`Supabase read failed. Using local users mirror: ${errorMessage(error)}`);
+			log.error(
+				`Failed read data from supabase. Using local users mirror: ${errorMessage(error)}`
+			);
 			const users = await this.readUsers();
 			const local = users.find(user => user.telegram_id === key);
 			if (local) this.cache.set(key, local);
@@ -156,6 +158,7 @@ export class DatabaseManager {
 			log.error(`Supabase upsert failed. Queueing local update: ${errorMessage(error)}`);
 			await this.enqueue(payload);
 		}
+
 		await this.updateLocalMirror(payload);
 		this.cache.delete(payload.telegram_id);
 	}
@@ -306,7 +309,7 @@ export class DatabaseManager {
 	private requireClient(): SupabaseClient<DatabaseSchema> {
 		if (!this.client) {
 			throw new DatabaseConfigurationError(
-				'Supabase is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env file'
+				'Supabase is not configured. Set DB_URL and DB_KEY in .env file'
 			);
 		}
 		return this.client;

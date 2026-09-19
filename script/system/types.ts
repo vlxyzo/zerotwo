@@ -22,18 +22,18 @@ export function toTeleId(value: IdInput): TelegramId {
 	if (typeof value === 'bigint') return value;
 	if (typeof value === 'number') {
 		if (!Number.isInteger(value))
-			throw new TypeError(`toTeleId: This ${value} is not an integer`);
+			throw new TypeError(`[toTeleId] Umm, this ${value} is not an integer`);
 		return BigInt(value);
 	}
 
 	if (/^-?\d+$/.test(value)) return BigInt(value);
-	throw new TypeError(`toTeleId: This ${value} is not a valid integer id`);
+	throw new TypeError(`[toTeleId] Umm, this ${value} is not a valid integer id`);
 }
 
 export function toDbId(value: TelegramId | IdInput): number {
 	const id = typeof value === 'bigint' ? value : toTeleId(value);
 	if (id > BigInt(Number.MAX_SAFE_INTEGER) || id < BigInt(Number.MIN_SAFE_INTEGER)) {
-		throw new RangeError(`toDbId: This ${id} exceeds javascript safe integer range`);
+		throw new RangeError(`[toDbId] Umm, this ${id} exceeds javascript safe integer range`);
 	}
 
 	return Number(id);
@@ -66,3 +66,19 @@ export interface UserInsert<TInfo extends Json = Json> {
 }
 
 export type UserUpdate = Partial<Omit<UserInsert, 'id'>> & { id: TelegramId };
+
+export interface PluginHandler {
+	command?: string | string[] | RegExp;
+	register?: boolean;
+	owner?: boolean;
+	admin?: boolean;
+	group?: boolean;
+	private?: boolean;
+	execute?: (ctx: any) => Promise<void> | void;
+	[key: string]: any;
+}
+
+export interface PluginModule {
+	handler?: PluginHandler;
+	default?: PluginHandler;
+}

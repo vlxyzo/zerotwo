@@ -20,24 +20,19 @@ export function checkCooldown(
 	command: string,
 	customCooldown?: number
 ): CooldownResult {
-	const fallbackCooldown = (global as any).cooldown /* || config.cooldown */ || 10;
-	const cooldownSeconds = customCooldown ?? fallbackCooldown;
+	const cooldownSeconds = customCooldown ?? setting.cooldown;
 	const cooldownMilliseconds = cooldownSeconds * 1000;
 	const now = Date.now();
 	const key = `${userId}_${command}`;
-
-	if (cooldownCache.has(key)) {
-		const expirationTime = cooldownCache.get(key)!;
-		if (now < expirationTime) {
-			const timeLeft = (expirationTime - now) / 1000;
-			return {
-				onCooldown: true,
-				timeLeft: Number(timeLeft.toFixed(1)),
-			};
-		}
+	const expirationTime = cooldownCache.get(key);
+	if (expirationTime && now < expirationTime) {
+		return {
+			onCooldown: true,
+			timeLeft: Number(((expirationTime - now) / 1000).toFixed(1)),
+		};
 	}
-	cooldownCache.set(key, now + cooldownMilliseconds);
 
+	cooldownCache.set(key, now + cooldownMilliseconds);
 	setTimeout(() => {
 		cooldownCache.delete(key);
 	}, cooldownMilliseconds);

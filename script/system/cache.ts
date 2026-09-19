@@ -42,7 +42,6 @@ export class AdvMap<K, V> extends Map<K, V> {
 		this.name = options.name ?? 'UnnamedCache';
 		this.sweepInterval = options.sweepInterval ?? 60_000;
 		this.onEvict = options.onEvict ?? null;
-
 		if (this.ttl > 0) {
 			this._startSweeper();
 		}
@@ -129,7 +128,6 @@ export class AdvMap<K, V> extends Map<K, V> {
 class ManageCache {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private readonly caches = new Map<string, AdvMap<any, any>>();
-
 	public createCache<K, V>(name: string, options: CacheOpt<K, V> = {}): AdvMap<K, V> {
 		if (this.caches.has(name)) {
 			return this.caches.get(name) as AdvMap<K, V>;

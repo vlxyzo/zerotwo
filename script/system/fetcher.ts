@@ -10,18 +10,18 @@
 
 import { log } from '#lib/logger.ts';
 
-const RETRY_STATUSES = new Set([403, 429, 503]);
-const DEFAULT_TIMEOUT_MS = 15_000;
+const retry_stats = new Set([403, 429, 503]);
+const default_timeout = 15_000;
 type FetchMode = 'api' | 'scraper';
 
-export interface SmartFetchOptions extends Omit<RequestInit, 'headers' | 'signal'> {
+export interface FetchOpt extends Omit<RequestInit, 'headers' | 'signal'> {
 	timeout?: number;
 	mode?: FetchMode;
 	headers?: HeadersInit;
 	signal?: AbortSignal;
 }
 
-const DESKTOP_UA: readonly string[] = [
+const desktop_ua: readonly string[] = [
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
 	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
@@ -29,15 +29,15 @@ const DESKTOP_UA: readonly string[] = [
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
 ];
 
-const MOBILE_UA: readonly string[] = [
+const mobile_ua: readonly string[] = [
 	'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/126.0.6478.108 Mobile/15E148 Safari/604.1',
 ];
 
-export function getRandomUA(isMobile = false): string {
-	const list = isMobile ? MOBILE_UA : DESKTOP_UA;
+export function randomizeUA(isMobile = false): string {
+	const list = isMobile ? mobile_ua : desktop_ua;
 	if (list.length === 0) {
-		log.error('No user agent strings are configured. The system may be unstable!');
+		log.error('No user agent strings are configured in fetcher');
 		return 'Mozilla/5.0 (compatible; Bot/1.0)';
 	}
 	return list[Math.floor(Math.random() * list.length)];
@@ -51,7 +51,7 @@ function getErrorMessage(error: unknown): string {
 function buildHeaders(mode: FetchMode, isMobile: boolean, customHeaders?: HeadersInit): Headers {
 	const headers = new Headers(customHeaders);
 	if (!headers.has('User-Agent') && !headers.has('user-agent')) {
-		headers.set('User-Agent', getRandomUA(isMobile));
+		headers.set('User-Agent', randomizeUA(isMobile));
 	}
 	if (mode === 'api') {
 		if (!headers.has('Accept')) headers.set('Accept', 'application/json, text/plain, */*');
@@ -69,22 +69,19 @@ function buildHeaders(mode: FetchMode, isMobile: boolean, customHeaders?: Header
 	return headers;
 }
 
-export async function smartFetch(
-	url: string | URL,
-	options: SmartFetchOptions = {}
-): Promise<Response> {
+export async function startFetch(url: string | URL, options: FetchOpt = {}): Promise<Response> {
 	const {
-		timeout = DEFAULT_TIMEOUT_MS,
+		timeout = default_timeout,
 		signal: callerSignal,
 		headers: customHeaders,
 		mode = 'scraper',
 		...fetchOptions
 	} = options;
-	const validTimeoutMs = Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_TIMEOUT_MS;
+	const validTimeoutMs = Number.isFinite(timeout) && timeout > 0 ? timeout : default_timeout;
 	const isFormData = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
 	const isUrlSearchParams =
 		typeof URLSearchParams !== 'undefined' && fetchOptions.body instanceof URLSearchParams;
-	const executeRequest = async (isMobileUA: boolean): Promise<Response> => {
+	const executeReq = async (isMobileUA: boolean): Promise<Response> => {
 		const finalHeaders = buildHeaders(mode, isMobileUA, customHeaders);
 		if (isFormData) {
 			finalHeaders.delete('sec-fetch-mode');
@@ -104,20 +101,20 @@ export async function smartFetch(
 		});
 	};
 	try {
-		let response = await executeRequest(false);
-		if (RETRY_STATUSES.has(response.status)) {
+		let response = await executeReq(false);
+		if (retry_stats.has(response.status)) {
 			// opt chaining, if exist - delia
 			log.warning?.(
-				`Desktop UA blocked with status ${response.status} at ${url.toString()}. Switching to Mobile UA...`
+				`Desktop user agent got blocked with status ${response.status} at ${url.toString()}. Switching to mobile user agent...`
 			);
 			if (response.body) {
 				await response.body.cancel().catch(() => {});
 			}
-			response = await executeRequest(true);
+			response = await executeReq(true);
 		}
 		if (!response.ok) {
 			throw new Error(
-				`HTTP Status ${response.status} - ${response.statusText || 'Request failed'}`
+				`HTTP Status ${response.status} [${response.statusText || 'Request failed'}]`
 			);
 		}
 		return response;
@@ -125,7 +122,7 @@ export async function smartFetch(
 		const errObj = error as Error;
 		if (errObj.name === 'TimeoutError' || errObj.name === 'AbortError') {
 			throw new Error(
-				`Request Timeout. Target took more than ${validTimeoutMs / 1000}s to respond`,
+				`Request Timeout. Target took more than ${validTimeoutMs / 1000}s to respond.`,
 				{ cause: error }
 			);
 		}

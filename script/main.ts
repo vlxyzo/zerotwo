@@ -9,9 +9,8 @@
  */
 
 import { Telegraf } from 'telegraf';
+import { GoogleGenAI } from '@google/genai';
 import { log } from '#lib/logger.ts';
 import './config.ts';
 
-log.success('reached main.ts');
-log.debug('123456789');
-log.error(bot.name);
+log.info(socmed.github);

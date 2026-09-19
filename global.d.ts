@@ -13,20 +13,16 @@ declare global {
 		name: string;
 		token: string | undefined;
 		version: string;
-		owner: string;
+	};
+	var setting: {
 		mode: string;
+		cooldown: number;
+		maintenance: boolean;
 	};
-	var database: {
-		provider: string | undefined;
-		urldb: string | undefined;
-		keydb: string | undefined;
-	};
-	var user: {
-		limit: {
-			default: number;
-			nines: number;
-			owner: number;
-		};
+	var owner: {
+		name: string;
+		username: string;
+		idTelegram: string;
 	};
 	var socmed: {
 		github: string;
@@ -41,11 +37,47 @@ declare global {
 		audio: string;
 		image: string;
 	};
+	var message: {
+		loading: string;
+		done: string;
+		error: string;
+		maintenance: string;
+		private: string;
+		group: string;
+		owner: string;
+		nines: string;
+		banned: string;
+		didyoumean: string;
+		missingArgs: string;
+		cooldown: string;
+		notRegistered: string;
+		start: string;
+	};
+	var user: {
+		limit: {
+			default: number;
+			nines: number;
+			owner: number;
+		};
+	};
+	var ai: {
+		model: string | undefined;
+		prompt: string | undefined;
+	};
+	var apikey: {
+		aiKey: string | undefined;
+		endKey: string | undefined;
+	};
 	var endpoint: {
 		del: string | undefined;
 		anb: string | undefined;
 		nre: string | undefined;
 		ypa: string | undefined;
+	};
+	var database: {
+		provider: string | undefined;
+		urldb: string | undefined;
+		keydb: string | undefined;
 	};
 }
 
