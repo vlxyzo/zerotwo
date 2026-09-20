@@ -38,7 +38,7 @@ class ProcessManager {
 		this.isRestart = false;
 
 		const args = ['--expose-gc', this.entryPath, ...process.argv.slice(2)];
-		this.child = spawn(process.argv[0], args, {
+		this.child = spawn(process.execPath, args, {
 			stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
 		});
 
