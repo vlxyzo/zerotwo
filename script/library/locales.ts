@@ -10,13 +10,13 @@
 
 // [DISABLED] Reason:
 // I18n module is temporarily disabled to reduce complexity during alpha testing.
-// Full multi-language support will be introduced in the v1.0.0 stable release.
+// Full multi-language support will be introduced in the v1.5.0+ stable release.
 
 // NOTE: The structure/flow of this module is subject to change at any time
 // to follow the project's workflow. It is not recommended to use this module
 // until everything is finalized.
 
-/*
+/* —————————————————————————————————————————————————————————————————————————————————————————————
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
@@ -24,32 +24,26 @@ import { log } from './logger.ts';
 
 export type TranslationVariables = Record<string, string | number>;
 type NestedDictionary = { [key: string]: string | string[] | NestedDictionary };
-
 interface LocaleFile {
 	meta?: { lang: string; [key: string]: unknown };
 	[key: string]: unknown;
 }
-
 export class I18n {
 	private static readonly pathLocales = path.join(import.meta.dirname, '../../source/locales');
 	private static readonly fallbackLang = 'en';
 	private static localesData: Record<string, NestedDictionary> = {};
 	private static watcher: fs.FSWatcher | null = null;
 	private static readonly reloadTimers = new Map<string, NodeJS.Timeout>();
-
 	public static load(): void {
 		if (!fs.existsSync(this.pathLocales)) {
 			log.error(`Cannot find locales directory at ${this.pathLocales}`);
 			return;
 		}
-
 		const files = fs.readdirSync(this.pathLocales);
 		let loadedCount = 0;
-
 		for (const file of files) {
 			if (!file.endsWith('.json')) continue;
 			const filePath = path.join(this.pathLocales, file);
-
 			try {
 				const fileContent = fs.readFileSync(filePath, 'utf-8');
 				const parsedData = JSON.parse(fileContent) as LocaleFile;
@@ -65,7 +59,6 @@ export class I18n {
 				log.error(`Failed to parse locales file ${file}: ${msg}`);
 			}
 		}
-
 		if (!this.localesData[this.fallbackLang]) {
 			log.error(
 				`Fallback language ${this.fallbackLang} not found. The system may be unstable`
@@ -75,12 +68,10 @@ export class I18n {
 		}
 		this.watchFiles();
 	}
-
 	private static watchFiles(): void {
 		if (!fs.existsSync(this.pathLocales) || this.watcher) return;
 		this.watcher = fs.watch(this.pathLocales, (eventType, filename) => {
 			if (!filename || !filename.endsWith('.json')) return;
-
 			const existingTimer = this.reloadTimers.get(filename);
 			if (existingTimer) clearTimeout(existingTimer);
 			this.reloadTimers.set(
@@ -91,14 +82,11 @@ export class I18n {
 				}, 300)
 			);
 		});
-
-		// fs.watch can emit 'error'
 		this.watcher.on('error', (error: Error) => {
 			log.error(`Locales file watcher crashed: ${error.message}`);
 			this.watcher = null;
 		});
 	}
-
 	private static async reloadFile(filename: string): Promise<void> {
 		log.info(`Locales file ${filename} changed. Reloading...`);
 		try {
@@ -115,11 +103,9 @@ export class I18n {
 			log.error(`Failed to hot reload locales file ${filename}: ${msg}`);
 		}
 	}
-
 	private static getLangData(langCode: string): NestedDictionary {
 		return this.localesData[langCode] || this.localesData[this.fallbackLang] || {};
 	}
-
 	public static t(langCode: string, keyPath: string, variables?: TranslationVariables): string {
 		const langObj = this.getLangData(langCode);
 		const keys = keyPath.split('.');
@@ -132,7 +118,6 @@ export class I18n {
 				break;
 			}
 		}
-
 		if (currentData === undefined && langCode !== this.fallbackLang) {
 			return this.t(this.fallbackLang, keyPath, variables);
 		}
@@ -159,4 +144,4 @@ export class I18n {
 }
 
 I18n.load();
-*/
+————————————————————————————————————————————————————————————————————————————————————————————— */

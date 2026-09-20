@@ -25,7 +25,7 @@ globalThis.setting = {
 globalThis.owner = {
 	name: 'Velix',
 	username: '@vlxyzo',
-	idTelegram: '',
+	id: process.env.OWNER_ID,
 };
 
 globalThis.socmed = {
@@ -36,7 +36,7 @@ globalThis.socmed = {
 
 globalThis.channel = {
 	url: 'https://t.me/vlxzo',
-	id: '-1004292434918',
+	id: process.env.CHANNEL_ID,
 };
 
 globalThis.media = {
@@ -45,20 +45,21 @@ globalThis.media = {
 };
 
 globalThis.message = {
-	loading: "⏳ <i>Hold on tight. I'm processing it...</i>",
-	done: "✅ <b>All done!</b>",
-	error: "❌ <b>Oops! Something went wrong inside my system. Please try again later.</b>",
-	maintenance: "<blockquote>🛠️ I'm taking a little break right now. Come back later, okay?</blockquote>",
-	private: "💌 Come to my DMs darling. I won't do this in public!",
-	group: "👥 This features can be used inside a <b>group</b>",
-	owner: "🔒 You're not my <b>true darling</b>. Keep your hands off this command!",
-	nines: "👑 You need to be in the <b>elite squad</b> to use this. <i>Time for an upgrade?</i>",
-	banned: "🚫 <b>You've been blacklisted. I don't want to see you again, anymore!</b>",
-	didyoumean: "❓ Huh? What are you trying to say? Is this what you mean?\n\n<blockquote>{dym}</blockquote>",
-	missingArgs: "⚠️ You forgot to give me the details. Try it like this:\n<code>{format}</code>",
-	cooldown: "⏱️ Woah, slow down! You're going too fast. Wait <code>{time}</code> before we do this again.",
-	notRegistered: "<blockquote>📝 You need to register first before you can be my darling. Type <code>/register</code></blockquote>",
-	start: "🌸 Hello @{user}! <b>{greetings}</b>.\n\nI'm <b>{bot}</b>, i'll be your partner right now. <b>Let's fly together darling!</b>\n\n<blockquote>Type <code>/help</code> to see what we can do.</blockquote>",
+	loading: '⏳ <i>Hang tight, magic in progress...</i>',
+	done: "✅ <b>Done and dusted!</b>",
+	error: "❌ <b>Oops! Something broke. No worries though, I've already told my true darling about it!</b>",
+	maintenance: "🛠️ <b>I'm down for scheduled maintenance at the moment. I'll be back online shortly, please try again later.</b>",
+	private: "💌 <b>Let's move into DMs, I can't do this in public.</b>",
+	group: "👥 <b>This one only works inside a group chat.</b>",
+	owner: "🔒 <b>You're not my true darling. Keep your hands off this command!</b>",
+	nines: "🦖 <b>You need to be part of the Nines Squad to unlock this feature.</b>\n<blockquote>Time for an upgrade? 💎</blockquote>",
+	banned: "🚫 <b>Looks like you're blacklisted and can't use this feature.</b>",
+	didyoumean: "❓ <b>Didn't quite catch that. Did you mean this?</b>\n\n<blockquote>{dym}</blockquote>",
+	missingArgs: "⚠️ <b>Missing arguments! Here's how to use it:</b>\n<code>{format}</code>",
+	cooldown: "⏱️ <b>Woah, slow down!</b> You're going too fast. Wait <code>{time}</code> before we do this again.",
+	notRegistered: "<blockquote>🔑 You need to register first. Just type <code>/register</code> to get started.</blockquote>",
+	start: "🌸 Hey {user}! <b>{greetings}</b>.\n\nIt's me, <b>{bot}</b>! I'm here to be your partner, your helper, and your favorite companion. Whatever you need, I'll handle it for you.\n\n<blockquote>💫 Ready to begin? Type <code>/menu</code> and let's fly together!</blockquote>",
+	ownerAway: "🌙 <b>My true darling is away right now, he's busy with something. Leave a message and he'll reply when he's back. No spam-spam okay?</b>"
 };
 
 globalThis.user = {

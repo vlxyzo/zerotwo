@@ -22,7 +22,7 @@ declare global {
 	var owner: {
 		name: string;
 		username: string;
-		idTelegram: string;
+		id: string | undefined;
 	};
 	var socmed: {
 		github: string;
@@ -31,7 +31,7 @@ declare global {
 	};
 	var channel: {
 		url: string;
-		id: string;
+		id: string | undefined;
 	};
 	var media: {
 		audio: string;
@@ -52,6 +52,7 @@ declare global {
 		cooldown: string;
 		notRegistered: string;
 		start: string;
+		ownerAway: string;
 	};
 	var user: {
 		limit: {

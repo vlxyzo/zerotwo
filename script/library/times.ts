@@ -28,6 +28,12 @@ export class TimeUtil {
 		year: 'numeric',
 	});
 
+	private static readonly hourFormatter = new Intl.DateTimeFormat('en-US', {
+		timeZone: 'Asia/Jakarta',
+		hour: 'numeric',
+		hourCycle: 'h23',
+	});
+
 	public static formatDate(date: Date | string | number = new Date()): string {
 		const d = new Date(date);
 		const validDate = Number.isNaN(d.getTime()) ? new Date() : d;
@@ -79,5 +85,22 @@ export class TimeUtil {
 				.join(' ')
 				.trim() || '0 seconds'
 		);
+	}
+
+	public static getGreeting(date: Date | string | number = new Date()): string {
+		const d = new Date(date);
+		const validDate = Number.isNaN(d.getTime()) ? new Date() : d;
+		const hourStr = this.hourFormatter.format(validDate);
+		const hour = parseInt(hourStr, 10);
+		if (hour >= 4 && hour < 12) {
+			return 'Good morning 🌅';
+		}
+		if (hour >= 12 && hour < 17) {
+			return 'Good afternoon ☀️';
+		}
+		if (hour >= 17 && hour < 21) {
+			return 'Good evening 🌙';
+		}
+		return 'Good night 🌃';
 	}
 }

@@ -17,9 +17,9 @@ export const log = {
 	error: text => console.error(`${tm()} ${styleText(['white', 'bgRed', 'bold'], `⟨X⟩ ${text}`)}`),
 	warning: text => console.warn(`${tm()} ${styleText(['yellow', 'bold'], '⟨!⟩')} ${text}`),
 	success: text => console.log(`${tm()} ${styleText(['green', 'bold'], '⟨✓⟩')} ${text}`),
-	debug: text => console.log(`${tm()} ${styleText(['gray', 'bold'], '⟨+⟩')} ${text}`),
+	debug: text => console.log(`${tm()} ${styleText(['gray', 'bold'], '⟨#⟩')} ${text}`),
 	loading: text => console.log(`${styleText(['gray', 'italic'], text)}`),
 	info: text => console.info(`${tm()} ${styleText(['magenta', 'bold'], '⟨•⟩')} ${text}`),
-	zerotwo: (me, message) => console.log(`${tm()} ${styleText(['blue', 'bold'], `⟨#⟩ ${me}`)} ${message}`),
-	user: (sender, command) => console.log(`${tm()} ${styleText(['bgBlue', 'white', 'bold'], `⟨@⟩ ${sender}`)} executed ${command}`),
+	zerotwo: (me, message) => console.log(`${tm()} ${styleText(['blue', 'bold'], `⟨=⟩ ${me}`)} ${message}`),
+	user: (sender, command) => console.log(`${tm()} ${styleText(['bgBlue', 'white', 'bold'], `⟨>⟩ ${sender}`)} executed ${command}`),
 };

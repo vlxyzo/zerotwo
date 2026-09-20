@@ -8,6 +8,11 @@
  * 源码  :  github.com/vlxyzo/zerotwo
  */
 
+export interface CooldownResult {
+	onCooldown: boolean;
+	timeLeft: number;
+}
+
 export interface PluginCommand {
 	command?: string | string[];
 	help?: string | string[];
@@ -19,16 +24,58 @@ export interface DidYouMeanResult {
 	similarity: string;
 }
 
+// cooldown utilities
+const cooldownCache = new Map<string, number>();
+const cooldownTimers = new Map<string, NodeJS.Timeout>();
+
+export function checkCooldown(
+	userId: string | number,
+	command: string,
+	customCooldown?: number
+): CooldownResult {
+	const defaultCooldown = typeof setting !== 'undefined' ? setting.cooldown : 10;
+	const cooldownSeconds = customCooldown ?? defaultCooldown;
+	const cooldownMilliseconds = cooldownSeconds * 1000;
+	const now = Date.now();
+	const key = `${userId}_${command}`;
+	const expirationTime = cooldownCache.get(key);
+	if (expirationTime && now < expirationTime) {
+		return {
+			onCooldown: true,
+			timeLeft: Number(((expirationTime - now) / 1000).toFixed(1)),
+		};
+	}
+	cooldownCache.set(key, now + cooldownMilliseconds);
+
+	const existingTimer = cooldownTimers.get(key);
+	if (existingTimer) {
+		clearTimeout(existingTimer);
+	}
+	const timer = setTimeout(() => {
+		cooldownCache.delete(key);
+		cooldownTimers.delete(key);
+	}, cooldownMilliseconds);
+	cooldownTimers.set(key, timer);
+	return {
+		onCooldown: false,
+		timeLeft: 0,
+	};
+}
+
+// command matching
 function getSimilarity(str1: string, str2: string): number {
 	if (!str1 && !str2) return 100;
 	if (!str1 || !str2) return 0;
+
 	const a = str1.toLowerCase();
 	const b = str2.toLowerCase();
 	if (a === b) return 100;
+
 	const aLen = a.length;
 	const bLen = b.length;
 	let prevRow = Array.from({ length: aLen + 1 }, (_, i) => i);
 	let currRow = new Array<number>(aLen + 1);
+
 	for (let i = 1; i <= bLen; i++) {
 		currRow[0] = i;
 		for (let j = 1; j <= aLen; j++) {
@@ -51,34 +98,34 @@ function getSimilarity(str1: string, str2: string): number {
 export function findDidYouMean<K>(
 	input: string,
 	pluginsMap: Map<K, PluginCommand>,
-	threshold: number = 60
+	threshold = 60
 ): DidYouMeanResult | null {
 	if (!input || input.length < 2 || !pluginsMap || pluginsMap.size === 0) {
 		return null;
 	}
 	let bestMatch: string | null = null;
 	let highestPercent = 0;
+
 	const inputLen = input.length;
 	for (const [_, plugin] of pluginsMap) {
-		let cmds: string[] = [];
-		if (Array.isArray(plugin.command)) {
-			cmds = plugin.command;
-		} else if (typeof plugin.command === 'string') {
-			cmds = [plugin.command];
-		} else if (Array.isArray(plugin.help)) {
-			cmds = plugin.help;
-		} else if (typeof plugin.help === 'string') {
-			cmds = [plugin.help];
+		const cmds: string[] = [];
+		if (plugin.command) {
+			cmds.push(...(Array.isArray(plugin.command) ? plugin.command : [plugin.command]));
 		}
-		for (let i = 0; i < cmds.length; i++) {
-			const cmd = cmds[i];
+		if (plugin.help) {
+			cmds.push(...(Array.isArray(plugin.help) ? plugin.help : [plugin.help]));
+		}
+
+		for (const cmd of cmds) {
 			if (!cmd || typeof cmd !== 'string') continue;
+
 			const cmdLen = cmd.length;
 			const maxPossiblePercent =
 				(Math.min(inputLen, cmdLen) / Math.max(inputLen, cmdLen)) * 100;
 			if (maxPossiblePercent < threshold && highestPercent < threshold) {
 				continue;
 			}
+
 			const percent = getSimilarity(input, cmd);
 			if (percent > highestPercent) {
 				highestPercent = percent;

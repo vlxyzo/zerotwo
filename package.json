@@ -27,10 +27,10 @@
 	"type": "module",
 	"main": "start.ts",
 	"scripts": {
-		"build": "",
+		"build": "tsc",
 		"start": "tsx --env-file=.env start.ts",
 		"dev": "tsx watch --env-file=.env start.ts",
-		"clean": "node -e \"const fs = require('fs'); fs.rmSync('database', { recursive: true, force: true }); fs.mkdirSync('database');\"",
+		"clean": "node --input-type=module -e \"import fs from 'node:fs'; fs.rmSync('database', { recursive: true, force: true }); fs.mkdirSync('database');\"",
 		"update": "git pull && npm install"
 	},
 	"engines": {
