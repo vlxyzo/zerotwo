@@ -32,6 +32,7 @@ export class AdvMap<K, V> extends Map<K, V> {
 	public readonly name: string;
 	public readonly sweepInterval: number;
 	public readonly onEvict: ((key: K, value: V, reason: EvictReason) => void) | null;
+
 	private readonly timestamps = new Map<K, number>();
 	private _sweepTimer: NodeJS.Timeout | null = null;
 
@@ -42,6 +43,7 @@ export class AdvMap<K, V> extends Map<K, V> {
 		this.name = options.name ?? 'UnnamedCache';
 		this.sweepInterval = options.sweepInterval ?? 60_000;
 		this.onEvict = options.onEvict ?? null;
+
 		if (this.ttl > 0) {
 			this._startSweeper();
 		}
@@ -64,6 +66,7 @@ export class AdvMap<K, V> extends Map<K, V> {
 
 	public override get(key: K): V | undefined {
 		if (!this.has(key)) return undefined;
+
 		if (this.ttl > 0) {
 			const timeAdded = this.timestamps.get(key);
 			if (timeAdded !== undefined && Date.now() - timeAdded > this.ttl) {
@@ -72,7 +75,13 @@ export class AdvMap<K, V> extends Map<K, V> {
 			}
 		}
 
-		return super.get(key);
+		const value = super.get(key);
+		if (value !== undefined) {
+			super.delete(key);
+			super.set(key, value);
+		}
+
+		return value;
 	}
 
 	public override delete(key: K): boolean {
@@ -126,20 +135,20 @@ export class AdvMap<K, V> extends Map<K, V> {
 }
 
 class ManageCache {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private readonly caches = new Map<string, AdvMap<any, any>>();
+	private readonly caches = new Map<string, AdvMap<unknown, unknown>>();
+
 	public createCache<K, V>(name: string, options: CacheOpt<K, V> = {}): AdvMap<K, V> {
 		if (this.caches.has(name)) {
-			return this.caches.get(name) as AdvMap<K, V>;
+			return this.caches.get(name) as unknown as AdvMap<K, V>;
 		}
 		options.name = name;
 		const cache = new AdvMap<K, V>(options);
-		this.caches.set(name, cache);
+		this.caches.set(name, cache as unknown as AdvMap<unknown, unknown>);
 		return cache;
 	}
 
 	public getCache<K, V>(name: string): AdvMap<K, V> | undefined {
-		return this.caches.get(name) as AdvMap<K, V> | undefined;
+		return this.caches.get(name) as unknown as AdvMap<K, V> | undefined;
 	}
 
 	public clearAllCaches(): void {
