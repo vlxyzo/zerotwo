@@ -56,7 +56,7 @@ export function toDbId(value: TelegramId | IdInput): number {
 
 export interface UserRow<TInfo extends Json = Json> {
 	id: number;
-	telegram_id: number;
+	telegram_id: number | bigint;
 	username: string | null;
 	first_name: string | null;
 	last_name: string | null;

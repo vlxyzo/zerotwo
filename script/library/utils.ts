@@ -18,7 +18,7 @@ export interface CooldownResult {
 }
 
 export interface PluginCommand {
-	command?: string | string[];
+	command?: string | string[] | RegExp;
 	help?: string | string[];
 	[key: string]: any;
 }
@@ -115,6 +115,7 @@ export function findDidYouMean<K>(
 	for (const [_, plugin] of pluginsMap) {
 		const cmds: string[] = [];
 		if (plugin.command) {
+			if (plugin.command instanceof RegExp) continue;
 			cmds.push(...(Array.isArray(plugin.command) ? plugin.command : [plugin.command]));
 		}
 		if (plugin.help) {

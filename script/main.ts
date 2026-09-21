@@ -30,8 +30,25 @@ async function bootstrap(): Promise<void> {
 
 		const zeroTwo = new Telegraf(bot.token);
 		await loadPlugins();
+		await DbManager.syncOfflineQueue().catch(error => {
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			log.warning(`Database offline queue could not be synchronized: ${errorMessage}`);
+		});
 		zeroTwo.on('message', async ctx => {
 			await handleMessage(ctx);
+		});
+		zeroTwo.on('callback_query', async ctx => {
+			const callback = ctx.callbackQuery;
+			if (
+				!('data' in callback) ||
+				typeof callback.data !== 'string' ||
+				!callback.data.startsWith('command:')
+			) {
+				await ctx.answerCbQuery();
+				return;
+			}
+			await ctx.answerCbQuery();
+			await ctx.reply(`/${callback.data.slice('command:'.length)}`);
 		});
 
 		await zeroTwo.launch();

@@ -12,7 +12,7 @@
  * @source      github.com/vlxyzo/zerotwo
  */
 
-import { readdirSync, existsSync } from 'node:fs';
+import { readdirSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { log } from '#lib/logger.ts';
@@ -23,8 +23,8 @@ export const plugins = new Map<string, PluginHandler>();
 
 export async function loadPlugins(): Promise<void> {
 	if (!existsSync(pluginDir)) {
-		log.error(`Plugin directory not found at ${pluginDir}`);
-		return;
+		mkdirSync(pluginDir, { recursive: true });
+		log.info(`Created plugin directory at ${pluginDir}`);
 	}
 
 	plugins.clear();

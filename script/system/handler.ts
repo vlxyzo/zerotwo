@@ -12,7 +12,7 @@
  * @source      github.com/vlxyzo/zerotwo
  */
 
-import { Context } from 'telegraf';
+import { Context, Markup } from 'telegraf';
 import { plugins } from './loader.ts';
 import { DbManager } from './database.ts';
 import { checkCooldown, findDidYouMean } from '#lib/utils.ts';
@@ -32,8 +32,9 @@ export async function handleMessage(ctx: Context): Promise<void> {
 		if (!text) return;
 		const prefixRegex = /^[\\/!#.]/;
 		if (!prefixRegex.test(text)) return;
-		const args = text.slice(1).trim().split(/ +/);
-		const commandName = args.shift()?.toLowerCase();
+		const args = text.slice(1).trim().split(/\s+/);
+		const rawCommand = args.shift()?.toLowerCase();
+		const commandName = rawCommand?.split('@', 1)[0];
 		if (!commandName) return;
 		const userId = ctx.from?.id.toString() || '';
 		const isOwner = userId === owner.id;
@@ -42,9 +43,10 @@ export async function handleMessage(ctx: Context): Promise<void> {
 			return;
 		}
 		let matchedPlugin: PluginHandler | null = null;
-		for (const [_, plugin] of plugins.entries()) {
+		for (const plugin of plugins.values()) {
 			if (!plugin.command) continue;
 			if (plugin.command instanceof RegExp) {
+				plugin.command.lastIndex = 0;
 				if (plugin.command.test(commandName)) {
 					matchedPlugin = plugin;
 					break;
@@ -58,10 +60,17 @@ export async function handleMessage(ctx: Context): Promise<void> {
 			}
 		}
 		if (!matchedPlugin) {
-			const dym = findDidYouMean(commandName, plugins as any, 60);
+			const dym = findDidYouMean(commandName, plugins, 60);
 			if (dym) {
-				const replyMsg = message.didyoumean.replace('{dym}', dym.command);
-				await ctx.replyWithHTML(replyMsg);
+				const replyMsg = message.didyoumean
+					.replace('{command}', dym.command)
+					.replace('{similarity}', dym.similarity);
+				const command = dym.command.replace(/^[/\\!#.]/, '');
+				await ctx.replyWithHTML(replyMsg, {
+					...Markup.inlineKeyboard([
+						Markup.button.callback(`▶️ /${command}`, `command:${command}`),
+					]),
+				});
 			}
 			return;
 		}
@@ -83,6 +92,13 @@ export async function handleMessage(ctx: Context): Promise<void> {
 			const isRegistered = !!userRecord;
 			if (!isRegistered) {
 				await ctx.replyWithHTML(message.notRegistered);
+				return;
+			}
+		}
+		if (userId) {
+			const userRecord = await DbManager.getUser(userId);
+			if (userRecord?.is_banned) {
+				await ctx.replyWithHTML(message.banned);
 				return;
 			}
 		}
