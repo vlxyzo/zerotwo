@@ -11,9 +11,9 @@
 <!-- header -->
 
 <div align="center">
-  <h1><b>ZEROTWO</b> <code>⟨002⟩</code></h1>
-  <img src="https://github.com/user-attachments/assets/7097db10-b9ec-400a-8341-214bf294f57c" alt="banner"><br>
-  <sub>A hyper aesthetic Telegram assistant. Maintained by <a href="https://github.com/vlxyzo">Velix</a></sub>
+<h1><b>ZEROTWO</b> <code>⟨002⟩</code></h1>
+<img src="https://github.com/user-attachments/assets/7097db10-b9ec-400a-8341-214bf294f57c" alt="banner"><br><br>
+<sub>A hyper aesthetic Telegram assistant. Maintained by <a href="https://github.com/vlxyzo">Velix</a></sub>
 </div>
 
 ---
@@ -33,7 +33,7 @@
 
 ---
 
-<!-- caution n warn -->
+<!-- caution & warn -->
 
 > [!CAUTION]
 > **ALPHA STAGE & OPEN SOURCE LICENSE (DISCLAIMER)**
@@ -44,7 +44,7 @@
 > - **Zero Liability:** The [author](https://github.com/vlxyzo) and maintainers assume **no liability or responsibility** for any account bans, data loss, API downtime, or damages resulting from the use of this software. **USE AT YOUR OWN RISK.**
 
 > [!WARNING]
-> **EXTERNAL API RELIANCE & TELEGRAM RISKS:**
+> **EXTERNAL API RELIANCE & TELEGRAM RISKS**
 >
 > 1. **Third-Party Endpoints:** This project heavily relies on external web APIs for its core features. If the target API is down, rate-limited, or changes its response structure, the bot _will_ break or throw errors.
 > 2. **Unhandled Alpha Bugs:** Because this is an early alpha release, error handling for external API timeouts or invalid JSON responses might not be fully polished yet. Expect the bot to crash if an endpoint acts up.
