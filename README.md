@@ -12,7 +12,7 @@
 
 <div align="center">
   <h1><b>ZEROTWO</b> <code>⟨002⟩</code></h1>
-  <img src="./source/media/image/thumb/3.png" alt="banner"><br>
+  <img src="https://github.com/user-attachments/assets/7097db10-b9ec-400a-8341-214bf294f57c" alt="banner"><br>
   <sub>A hyper aesthetic Telegram assistant. Maintained by <a href="https://github.com/vlxyzo">Velix</a></sub>
 </div>
 
