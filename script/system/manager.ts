@@ -1,11 +1,15 @@
 /**
- * 版权所有。允许个人和商业使用及修改。
- * 重新分发请严格遵循 GPL-V3.0 协议，且请勿声称原创。
+ * Zero Two - Telegram Bot
+ * Copyright (c) 2026 Velix
  *
- * 项目  :  Zero Two v0.0.1-alpha
- * 作者  :  Velix
- * 协议  :  GPL-V3.0
- * 源码  :  github.com/vlxyzo/zerotwo
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3.0.
+ * See LICENSE file for details.
+ *
+ * @project     Zero Two v0.0.1-alpha
+ * @author      Velix <github.com/vlxyzo>
+ * @license     GPL-3.0
+ * @source      github.com/vlxyzo/zerotwo
  */
 
 import { promises as fs } from 'node:fs';
@@ -13,7 +17,7 @@ import { dirname, join } from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { log } from '#lib/logger.ts';
 import { GlobCache, type AdvMap } from './cache.ts';
-import { toDbId, type Json, type UserInsert, type UserRow } from './types.ts';
+import { toTeleId, type IdInput, type Json, type UserInsert, type UserRow } from './types.ts';
 
 type UserRecord = UserRow<Json>;
 type UserPayload = UserInsert<Json>;
@@ -47,11 +51,10 @@ export interface DatabaseManagerOptions {
 export class DatabaseSyncError extends Error {
 	public override readonly name = 'DatabaseSyncError';
 
-	public constructor(
-		message: string,
-		public readonly cause?: unknown
-	) {
+	public readonly cause?: unknown;
+	public constructor(message: string, cause?: unknown) {
 		super(message, { cause });
+		this.cause = cause;
 	}
 }
 
@@ -68,8 +71,8 @@ const isUserRow = (value: unknown): value is UserRecord => {
 	if (!isRecord(value as Json)) return false;
 	const row = value as Record<string, Json | undefined>;
 	return (
-		typeof row.id === 'number' &&
-		typeof row.telegram_id === 'number' &&
+		(typeof row.id === 'number' || typeof row.id === 'bigint') &&
+		(typeof row.telegram_id === 'number' || typeof row.telegram_id === 'bigint') &&
 		(row.username === null || typeof row.username === 'string') &&
 		(row.first_name === null || typeof row.first_name === 'string') &&
 		(row.last_name === null || typeof row.last_name === 'string') &&
@@ -84,7 +87,17 @@ const isUserRow = (value: unknown): value is UserRecord => {
 const isUserPayload = (value: unknown): value is UserPayload => {
 	if (!isRecord(value as Json)) return false;
 	const payload = value as Record<string, Json | undefined>;
-	return typeof payload.telegram_id === 'number' && Number.isSafeInteger(payload.telegram_id);
+	return typeof payload.telegram_id === 'number' || typeof payload.telegram_id === 'bigint';
+};
+
+const jsonReplacer = (_key: string, value: unknown): unknown =>
+	typeof value === 'bigint' ? `${value.toString()}n` : value;
+
+const jsonReviver = (_key: string, value: unknown): unknown => {
+	if (typeof value === 'string' && /^-?\d+n$/.test(value)) {
+		return BigInt(value.slice(0, -1));
+	}
+	return value;
 };
 
 export class DatabaseManager {
@@ -92,7 +105,7 @@ export class DatabaseManager {
 	private readonly client: SupabaseClient<DatabaseSchema> | null;
 	private readonly usersFile: string;
 	private readonly queueFile: string;
-	private readonly cache: AdvMap<number, UserRecord>;
+	private readonly cache: AdvMap<bigint, UserRecord>;
 	private readonly sweepIntervalMs: number;
 	private fileTail: Promise<void> = Promise.resolve();
 	private syncPromise: Promise<void> | null = null;
@@ -108,39 +121,41 @@ export class DatabaseManager {
 			options.client === undefined
 				? DatabaseManager.createConfiguredClient()
 				: options.client;
-		this.cache = GlobCache.createCache<number, UserRecord>('users_cache', {
+		this.cache = GlobCache.createCache<bigint, UserRecord>('users_cache', {
 			ttl: options.cacheTtlMs ?? 60_000,
 			sweepInterval: Math.min(options.cacheTtlMs ?? 60_000, 60_000),
 		});
 		this.startSweeper();
 	}
 
-	public async getUser(
-		telegramId: Parameters<typeof toDbId>[0]
-	): Promise<UserRecord | undefined> {
-		const key = toDbId(telegramId);
+	public async getUser(telegramId: IdInput): Promise<UserRecord | undefined> {
+		const key = toTeleId(telegramId);
 		const cached = this.cache.get(key);
 		if (cached) return cached;
-
 		try {
 			const client = this.requireClient();
 			const { data, error } = await client
 				.from('users')
 				.select('*')
-				.eq('telegram_id', key)
+				.eq('telegram_id', key.toString())
 				.maybeSingle();
+
 			if (error) throw error;
 			if (data && !isUserRow(data)) {
 				throw new DatabaseSyncError('Data from supabase returned an invalid users row');
 			}
-			if (data) this.cache.set(key, data);
+
+			if (data) {
+				data.telegram_id = toTeleId(data.telegram_id);
+				this.cache.set(key, data);
+			}
 			return data ?? undefined;
 		} catch (error) {
 			log.error(
 				`Failed read data from supabase. Using local users mirror: ${errorMessage(error)}`
 			);
 			const users = await this.readUsers();
-			const local = users.find(user => user.telegram_id === key);
+			const local = users.find(user => toTeleId(user.telegram_id) === key);
 			if (local) this.cache.set(key, local);
 			return local;
 		}
@@ -148,6 +163,7 @@ export class DatabaseManager {
 
 	public async upsertUser<TInfo extends Json>(userData: UserInsert<TInfo>): Promise<void> {
 		const payload = this.normalizePayload(userData);
+		const idKey = toTeleId(payload.telegram_id);
 		try {
 			const client = this.requireClient();
 			const { error } = await client.from('users').upsert(payload, {
@@ -158,9 +174,8 @@ export class DatabaseManager {
 			log.error(`Supabase upsert failed. Queueing local update: ${errorMessage(error)}`);
 			await this.enqueue(payload);
 		}
-
 		await this.updateLocalMirror(payload);
-		this.cache.delete(payload.telegram_id);
+		this.cache.delete(idKey);
 	}
 
 	public async syncOfflineQueue(): Promise<void> {
@@ -200,6 +215,15 @@ export class DatabaseManager {
 		}
 	}
 
+	private withFileLock<T>(operation: FileOperation<T>): Promise<T> {
+		const run = this.fileTail.then(operation, operation);
+		this.fileTail = run.then(
+			() => undefined,
+			() => undefined
+		);
+		return run;
+	}
+
 	private async claimQueue(): Promise<UserPayload[]> {
 		return this.withFileLock(async () => {
 			const queue = await this.readQueue();
@@ -219,7 +243,9 @@ export class DatabaseManager {
 	private async enqueue(payload: UserPayload): Promise<void> {
 		await this.withFileLock(async () => {
 			const queue = await this.readQueue();
-			const next = queue.filter(item => item.telegram_id !== payload.telegram_id);
+			const next = queue.filter(
+				item => toTeleId(item.telegram_id) !== toTeleId(payload.telegram_id)
+			);
 			next.push(payload);
 			await this.writeJsonAtomic(this.queueFile, next);
 		});
@@ -228,7 +254,8 @@ export class DatabaseManager {
 	private async updateLocalMirror(payload: UserPayload): Promise<void> {
 		await this.withFileLock(async () => {
 			const users = await this.readUsers();
-			const index = users.findIndex(user => user.telegram_id === payload.telegram_id);
+			const payloadId = toTeleId(payload.telegram_id);
+			const index = users.findIndex(user => toTeleId(user.telegram_id) === payloadId);
 			const current = index >= 0 ? users[index] : undefined;
 			const merged = this.mergePayload(current, payload);
 			if (index >= 0) users[index] = merged;
@@ -265,7 +292,8 @@ export class DatabaseManager {
 
 	private async readJson<T>(file: string, parse: (value: unknown) => T, empty: T): Promise<T> {
 		try {
-			return parse(JSON.parse(await fs.readFile(file, 'utf8')));
+			const fileContent = await fs.readFile(file, 'utf8');
+			return parse(JSON.parse(fileContent, jsonReviver));
 		} catch (error) {
 			if (isMissingFile(error)) return empty;
 			if (error instanceof SyntaxError) {
@@ -278,23 +306,24 @@ export class DatabaseManager {
 	private async writeJsonAtomic(file: string, value: unknown): Promise<void> {
 		await fs.mkdir(dirname(file), { recursive: true });
 		const temporary = `${file}.tmp`;
-		await fs.writeFile(temporary, `${JSON.stringify(value)}\n`, 'utf8');
+		const data = JSON.stringify(value, jsonReplacer);
+		await fs.writeFile(temporary, `${data}\n`, 'utf8');
 		await fs.rename(temporary, file);
 	}
 
 	private normalizePayload<TInfo extends Json>(payload: UserInsert<TInfo>): UserPayload {
 		return {
 			...payload,
-			telegram_id: toDbId(payload.telegram_id),
-			id: payload.id === undefined ? undefined : toDbId(payload.id),
+			telegram_id: toTeleId(payload.telegram_id),
+			id: payload.id === undefined ? undefined : Number(payload.id),
 		};
 	}
 
 	private mergePayload(current: UserRecord | undefined, payload: UserPayload): UserRecord {
 		const merged = { ...current, ...payload };
 		return {
-			id: merged.id ?? 0,
-			telegram_id: merged.telegram_id,
+			id: Number(merged.id ?? 0),
+			telegram_id: toTeleId(merged.telegram_id),
 			username: merged.username ?? null,
 			first_name: merged.first_name ?? null,
 			last_name: merged.last_name ?? null,
@@ -324,18 +353,9 @@ export class DatabaseManager {
 		}, this.sweepIntervalMs).unref();
 	}
 
-	private withFileLock<T>(operation: FileOperation<T>): Promise<T> {
-		const previous = this.fileTail;
-		let release!: () => void;
-		this.fileTail = new Promise<void>(resolve => {
-			release = resolve;
-		});
-		return previous.then(operation).finally(release);
-	}
-
 	private static createConfiguredClient(): SupabaseClient<DatabaseSchema> | null {
-		const url = database.urldb;
-		const key = database.keydb;
+		const url = typeof database !== 'undefined' ? database.urldb : undefined;
+		const key = typeof database !== 'undefined' ? database.keydb : undefined;
 		return url && key ? createClient<DatabaseSchema>(url, key) : null;
 	}
 }
@@ -351,12 +371,23 @@ export class DbManager {
 
 function isMissingFile(error: unknown): boolean {
 	return (
-		typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT'
+		typeof error === 'object' &&
+		error !== null &&
+		'code' in error &&
+		(error as any).code === 'ENOENT'
 	);
 }
 
 function errorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+	if (error instanceof Error) return error.message;
+	if (typeof error === 'object' && error !== null && 'message' in error) {
+		return String((error as { message: unknown }).message);
+	}
+	try {
+		return JSON.stringify(error);
+	} catch {
+		return String(error);
+	}
 }
 
 export type { UserPayload, UserRecord };

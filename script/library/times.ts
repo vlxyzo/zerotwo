@@ -1,11 +1,15 @@
 /**
- * 版权所有。允许个人和商业使用及修改。
- * 重新分发请严格遵循 GPL-V3.0 协议，且请勿声称原创。
+ * Zero Two - Telegram Bot
+ * Copyright (c) 2026 Velix
  *
- * 项目  :  Zero Two v0.0.1-alpha
- * 作者  :  Velix
- * 协议  :  GPL-V3.0
- * 源码  :  github.com/vlxyzo/zerotwo
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3.0.
+ * See LICENSE file for details.
+ *
+ * @project     Zero Two v0.0.1-alpha
+ * @author      Velix <github.com/vlxyzo>
+ * @license     GPL-3.0
+ * @source      github.com/vlxyzo/zerotwo
  */
 
 export class TimeUtil {
@@ -73,7 +77,8 @@ export class TimeUtil {
 		const h = Math.floor(ms / (60 * 60 * 1000)) % 24;
 		const m = Math.floor(ms / (60 * 1000)) % 60;
 		const s = Math.floor(ms / 1000) % 60;
-		const formatUnit = (val: number, unit: string) => val > 0 ? `${val} ${unit}${val > 1 ? 's' : ''}` : '';
+		const formatUnit = (val: number, unit: string) =>
+			val > 0 ? `${val} ${unit}${val > 1 ? 's' : ''}` : '';
 		return (
 			[
 				formatUnit(d, 'day'),

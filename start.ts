@@ -1,11 +1,15 @@
 /**
- * 版权所有。允许个人和商业使用及修改。
- * 重新分发请严格遵循 GPL-V3.0 协议，且请勿声称原创。
+ * Zero Two - Telegram Bot
+ * Copyright (c) 2026 Velix
  *
- * 项目  :  Zero Two v0.0.1-alpha
- * 作者  :  Velix
- * 协议  :  GPL-V3.0
- * 源码  :  github.com/vlxyzo/zerotwo
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3.0.
+ * See LICENSE file for details.
+ *
+ * @project     Zero Two v0.0.1-alpha
+ * @author      Velix <github.com/vlxyzo>
+ * @license     GPL-3.0
+ * @source      github.com/vlxyzo/zerotwo
  */
 
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -14,6 +18,7 @@ import { log } from '#lib/logger.ts';
 
 export type CtPmsg = 'reset' | 'uptime' | 'exit';
 export type PtCmsg = 'gc';
+
 type SignalProcess = 'SIGINT' | 'SIGTERM';
 
 const velix = join(import.meta.dirname, './script/main.ts');
@@ -38,6 +43,7 @@ class ProcessManager {
 		this.isRestart = false;
 
 		const args = ['--expose-gc', this.entryPath, ...process.argv.slice(2)];
+
 		this.child = spawn(process.execPath, args, {
 			stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
 		});
@@ -48,6 +54,7 @@ class ProcessManager {
 
 	private ellRestart(): void {
 		this.isRestart = true;
+
 		if (this.child) {
 			log.loading('Wait a sec, gotta stop this one before we restart...');
 			this.child.kill();
@@ -58,9 +65,11 @@ class ProcessManager {
 
 	private ellExit(code = 0): never {
 		this.stopGc();
+
 		if (this.fcKillTime) {
 			clearTimeout(this.fcKillTime);
 		}
+
 		process.exit(code);
 	}
 
@@ -83,6 +92,7 @@ class ProcessManager {
 
 	private async graceShutd(signal: SignalProcess): Promise<void> {
 		if (this.isShutdown) return;
+
 		this.isShutdown = true;
 		log.warning(`${signal} received. Okay darling, shutting down nicely...`);
 		this.stopGc();
@@ -97,6 +107,7 @@ class ProcessManager {
 			log.error('Child process is being stubborn. Forcing shutdown now...');
 			process.exit(1);
 		}, 8000);
+
 		this.child.once('exit', () => {
 			this.ellExit(0);
 		});
@@ -104,6 +115,7 @@ class ProcessManager {
 
 	private childListen(): void {
 		if (!this.child) return;
+
 		this.child.on('message', (data: CtPmsg) => this.ipcMessage(data));
 		this.child.on('exit', (code, signal) => {
 			this.child = null;
@@ -114,11 +126,13 @@ class ProcessManager {
 				);
 				this.ellExit(0);
 			}
+
 			if (this.isRestart) {
 				log.loading('Child process terminated. Starting a fresh one for us...');
 				this.start();
 				return;
 			}
+
 			if (code !== 0) {
 				this.crashHandle(code, signal);
 			} else {
@@ -177,6 +191,7 @@ class ProcessManager {
 				process.exit(1);
 			});
 		};
+
 		process.once('SIGINT', () => handlesignal('SIGINT'));
 		process.once('SIGTERM', () => handlesignal('SIGTERM'));
 	}
