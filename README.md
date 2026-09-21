@@ -54,6 +54,59 @@
 
 ---
 
+<!-- key features -->
+
+<div align="center">
+<h1><b>Key Features</b></h1>
+<sub>Everything you need, packed into one aesthetic powerhouse.</sub>
+</div>
+
+<table align="center" width="100%">
+<tr>
+
+<td align="center" width="33%">
+<b>ELITE PERFORMANCE</b><br><br>
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/High%20Voltage.png" width="45" alt="speed"/><br><br>
+Strict TS 5+<br>Native ESModules
+</td>
+
+<td align="center" width="33%">
+<b>AI SUPPORT</b><br><br>
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Light%20Bulb.png" width="45" alt="ai"/><br><br>
+Smart Conversational<br>Automated Workflows
+</td>
+
+<td align="center" width="33%">
+<b>ROBUST STORAGE</b><br><br>
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/File%20Folder.png" width="45" alt="data"/><br><br>
+Supabase Database<br>Persistent State
+</td>
+
+</tr><tr>
+
+<td align="center" width="33%">
+<b>MODULAR ARCH</b><br><br>
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Gear.png" width="45" alt="gear"/><br><br>
+Plug-and-Play Plugins<br>Clean and Maintainable
+</td>
+
+<td align="center" width="33%">
+<b>OMNI FETCH</b><br><br>
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Inbox%20Tray.png" width="45" alt="download"/><br><br>
+HD Media Downloader<br>Fast Async Pipeline
+</td>
+
+<td align="center" width="33%">
+<b>OWNER TOOLS</b><br><br>
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Hammer%20and%20Wrench.png" width="45" alt="dev"/><br><br>
+Eval and Shell Commands<br>Full Owner Control
+</td>
+
+</tr>
+</table>
+
+---
+
 <!-- requirement -->
 
 <div align="center">
